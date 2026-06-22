@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quran Verse Image / Video Generator (Malay)</title>
+<title>Quran Verse Image / Video Generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
     --accent: #1a3a2a;
     --radius: 16px;
     --font-arabic: 'Noto Naskh Arabic', 'Scheherazade New', 'Amiri', serif;
-    --font-malay: 'Cormorant Garamond', 'Georgia', serif;
+    --font-urdu: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -384,7 +384,7 @@
 <body>
 
 <div class="app-header">
-  <h1>✦ Quran Verse Image / Video Generator (Malay) ✦</h1>
+  <h1>✦ Quran Verse Image / Video Generator ✦</h1>
   <p class="subtitle">Arabic · English · Malay — on beautiful nature imagery</p>
 </div>
 
@@ -510,7 +510,7 @@ function getAbsoluteVerseIndex(surah, verse) {
   return idx;
 }
 
-// ===== FETCH ARABIC + MALAY FROM QURAN.COM API =====
+// ===== FETCH ARABIC + URDU FROM QURAN.COM API =====
 async function fetchFromQuranAPI(surah, verse) {
   const key = `${surah}:${verse}`;
   const url = `https://api.quran.com/api/v4/verses/by_key/${key}?translations=39&fields=text_uthmani`;
@@ -518,10 +518,10 @@ async function fetchFromQuranAPI(surah, verse) {
   if (!resp.ok) throw new Error('Verse not found');
   const data = await resp.json();
   const v = data.verse;
-  const malayT = v.translations?.find(t => t.resource_id === 39);
+  const urduT = v.translations?.find(t => t.resource_id === 39);
   return {
     arabic: v.text_uthmani,
-    malay: malayT ? cleanTranslationText(malayT.text) : null,
+    urdu: urduT ? cleanTranslationText(urduT.text) : null,
     surahName: getSurahName(surah)
   };
 }
@@ -672,13 +672,13 @@ function getSurahName(num) {
 
 // ===== RENDER TO CANVAS (supports multiple verses) =====
 async function renderCanvas(verses, surahName, surahNum, imageUrl) {
-  // verses = [{arabic, english, malay, verseNum}, ...]
+  // verses = [{arabic, english, urdu, verseNum}, ...]
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   // Use smaller canvas on mobile (1080px max) for reliable recording
   const isMobile = window.innerWidth < 768;
   const W = isMobile ? 1080 : 1920;
-  const mobileScale = W / 1920;
+  const mobileScale = W / 1920; // scale all pixel values for mobile
   const MARGIN_X = W * 0.13;
   const TEXT_W = W - MARGIN_X * 2;
 
@@ -708,30 +708,30 @@ async function renderCanvas(verses, surahName, surahNum, imageUrl) {
     const engLineH = engFontSize * 1.7;
     const engH = engLines.length * engLineH;
 
-    // Malay
-    const malayFontSize = fitText(ctx, v.malay, TEXT_W, Math.round(32 * mobileScale), Math.round(45 * mobileScale),
-      `400 45px "Cormorant Garamond", "Jameel Noori Nastaleeq", serif`);
-    ctx.font = `400 ${malayFontSize}px "Playfair Display", "Cormorant Garamond", "Georgia", serif`;
-    const malayLines = wrapText(ctx, v.malay, TEXT_W);
-    const malayLineH = malayFontSize * 1.85;
-    const malayH = malayLines.length * malayLineH;
+    // Urdu
+    const urduFontSize = fitText(ctx, v.urdu, TEXT_W, Math.round(32 * mobileScale), Math.round(45 * mobileScale),
+      `400 45px "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif`);
+    ctx.font = `400 ${urduFontSize}px "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif`;
+    const urduLines = wrapText(ctx, v.urdu, TEXT_W);
+    const urduLineH = urduFontSize * 1.85;
+    const urduH = urduLines.length * urduLineH;
 
     sections.push({
       verseLabel, arabicFontSize, arabicLines, arabicLineH, arabicH,
       engFontSize, engLines, engLineH, engH,
-      malayFontSize, malayLines, malayLineH, malayH,
+      urduFontSize, urduLines, urduLineH, urduH,
       verseNum: v.verseNum
     });
   }
 
-  // Calculate total height
+  // Calculate total height (scaled for mobile)
   const headerH = Math.round(88 * mobileScale);
   const TOP_PAD = Math.round(224 * mobileScale);
   const BOTTOM_PAD = Math.round(144 * mobileScale);
   const GAP_HEADER = Math.round(96 * mobileScale);
   const GAP_AFTER_ARABIC = Math.round(48 * mobileScale);
   const GAP_AFTER_ENG = Math.round(35 * mobileScale);
-  const GAP_AFTER_MALAY = Math.round(35 * mobileScale);
+  const GAP_AFTER_URDU = Math.round(35 * mobileScale);
 
   let contentH = headerH + GAP_HEADER;
   for (let i = 0; i < sections.length; i++) {
@@ -739,8 +739,8 @@ async function renderCanvas(verses, surahName, surahNum, imageUrl) {
     if (i > 0) contentH += Math.round(64 * mobileScale); // GAP_BETWEEN_VERSES
     // Verse label
     if (s.verseLabel) contentH += Math.round(64 * mobileScale);
-    // Arabic + ornament gap + English + gap + Malay
-    contentH += s.arabicH + GAP_AFTER_ARABIC + 28 + GAP_AFTER_ARABIC + s.engH + GAP_AFTER_ENG + s.malayH;
+    // Arabic + ornament gap + English + gap + Urdu
+    contentH += s.arabicH + GAP_AFTER_ARABIC + Math.round(28 * mobileScale) + GAP_AFTER_ARABIC + s.engH + GAP_AFTER_ENG + s.urduH;
   }
 
   // Add translators credit once
@@ -851,32 +851,44 @@ async function renderCanvas(verses, surahName, surahNum, imageUrl) {
     }
     curY += GAP_AFTER_ENG;
 
-    // Malay
+    // Urdu
     ctx.direction = 'rtl';
-    ctx.font = `400 ${s.malayFontSize}px "Playfair Display", "Cormorant Garamond", "Georgia", serif`;
-    for (const line of s.malayLines) {
+    ctx.font = `400 ${s.urduFontSize}px "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif`;
+    for (const line of s.urduLines) {
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = 10;
-      ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = s.malayFontSize * 0.07; ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = s.urduFontSize * 0.07; ctx.lineJoin = 'round';
       ctx.strokeText(line, W / 2, curY);
       ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 4;
       ctx.fillStyle = '#ffffff'; ctx.fillText(line, W / 2, curY);
       ctx.restore();
-      curY += s.malayLineH;
+      curY += s.urduLineH;
     }
-    curY += GAP_AFTER_MALAY;
+    curY += GAP_AFTER_URDU;
   }
 
   // ---- TRANSLATOR CREDITS (once at bottom) ----
-  curY += 26;
+  curY += Math.round(26 * mobileScale);
   ctx.direction = 'ltr';
   ctx.font = `400 ${Math.round(24 * mobileScale)}px "Cormorant Garamond", serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.4)';
   ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3;
   ctx.fillText('English: Dr. Mustafa Khattab, The Clear Quran', W / 2, curY);
   curY += translatorH;
-  ctx.fillText('Malay: Abdullah Muhammad Basmeih e Qur\'an — Syed Abu Ali Maududi', W / 2, curY);
+  ctx.fillText('Malay: Abdullah Muhammad Basmeih', W / 2, curY);
   ctx.shadowBlur = 0;
+
+  // ---- RECITER (only if checkbox checked) ----
+  if (showRec) {
+    curY += Math.round(40 * mobileScale) + reciterCreditH;
+    ctx.font = `italic ${Math.round(26 * mobileScale)}px "Cormorant Garamond", serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3;
+    const reciterEl = document.getElementById('reciter');
+    const recName = reciterEl ? reciterEl.options[reciterEl.selectedIndex]?.text : 'Mishary Alafasy';
+    ctx.fillText('🎙 ' + (recName || 'Mishary Alafasy'), W / 2, curY);
+    ctx.shadowBlur = 0;
+  }
 
   // ---- BOTTOM GOLD LINE ----
   const footerY = H - footerH;
@@ -1028,7 +1040,7 @@ async function generate() {
       ]).then(([verseData, english]) => ({
         arabic: verseData.arabic,
         english: english,
-        malay: verseData.malay,
+        urdu: verseData.urdu,
         verseNum: vn
       }))
     );
@@ -1040,7 +1052,7 @@ async function generate() {
 
     loaderText.textContent = 'Rendering beautiful image…';
     const reciterEl = document.getElementById('reciter');
-    window._lastReciterName = reciterEl.options[reciterEl.selectedIndex]?.text || 'Mishary Alafasy';
+    const reciterName = reciterEl.options[reciterEl.selectedIndex]?.text || 'Mishary Alafasy';
     await renderCanvas(verses, surahName, surah, imageData.url);
 
     document.getElementById('result').classList.add('visible');
@@ -1050,6 +1062,7 @@ async function generate() {
     window._lastSurah = surah;
     window._lastSurahName = surahName;
     window._lastImageUrl = imageData.url;
+    window._lastReciterName = reciterName;
   } catch (err) {
     console.error(err);
     showError(`Error: ${err.message}`);
@@ -1280,7 +1293,7 @@ async function createVideo() {
       console.log('[Video] Output:', (blob.size/1024).toFixed(0), 'KB');
       const vLabel = verses.length===1 ? String(verses[0].verseNum) : `${verses[0].verseNum}-${verses[verses.length-1].verseNum}`;
       const url = URL.createObjectURL(blob);
-      // Save for preview — no auto-play, wait for user click
+      // Save for preview
       window._lastVideoURL = url;
       window._lastVideoName = `quran-${surah}-${vLabel}.${ext}`;
       window._lastVideoMime = mime;
@@ -1326,13 +1339,12 @@ async function createVideo() {
     };
     window.addEventListener('beforeunload', window._stopRecording);
 
-    // Keep feeding frames during recording (some browsers pause capture on static canvas)
     // Keep feeding frames + animated sparkles
     const sparkles = Array.from({length: 40}, () => ({
       x: Math.random() * W, y: Math.random() * H,
       s: Math.random() * 5 + 3, a: Math.random() * 0.25 + 0.1,
       da: (Math.random() - 0.5) * 0.05, dy: -(0.2 + Math.random() * 0.4),
-      hue: Math.random() < 0.3 ? 45 : 0
+      hue: Math.random() < 0.3 ? 45 : 0 // some gold, mostly white
     }));
     window._drawTimer = setInterval(() => {
       if (mediaRecorder.state !== 'recording') { clearInterval(window._drawTimer); return; }
