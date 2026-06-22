@@ -1341,9 +1341,9 @@ async function createVideo() {
 
     // Keep feeding frames during recording (some browsers pause capture on static canvas)
     // Keep feeding frames + animated sparkles
-    const sparkles = Array.from({length: 35}, () => ({
+    const sparkles = Array.from({length: 40}, () => ({
       x: Math.random() * W, y: Math.random() * H,
-      s: Math.random() * 4 + 2, a: Math.random() * 0.3 + 0.05,
+      s: Math.random() * 5 + 3, a: Math.random() * 0.25 + 0.1,
       da: (Math.random() - 0.5) * 0.05, dy: -(0.2 + Math.random() * 0.4),
       hue: Math.random() < 0.3 ? 45 : 0
     }));
