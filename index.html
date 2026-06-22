@@ -1050,7 +1050,6 @@ async function generate() {
     window._lastSurah = surah;
     window._lastSurahName = surahName;
     window._lastImageUrl = imageData.url;
-    window._lastReciterName = reciterName;
   } catch (err) {
     console.error(err);
     showError(`Error: ${err.message}`);
@@ -1221,18 +1220,6 @@ async function createVideo() {
     const rctx = rec.getContext('2d');
     rctx.drawImage(mainCanvas, 0, 0);
 
-    // Draw reciter name on video canvas (image stays clean)
-    const reciterName = window._lastReciterName || (() => { const el = document.getElementById('reciter'); return el.options[el.selectedIndex]?.text; })() || 'Mishary Alafasy';
-    if (document.getElementById('showReciter').checked) {
-      rctx.font = 'italic 28px "Cormorant Garamond", serif';
-    rctx.fillStyle = 'rgba(255,255,255,0.55)';
-    rctx.shadowColor = 'rgba(0,0,0,0.6)'; rctx.shadowBlur = 4;
-    rctx.textAlign = 'center';
-    rctx.fillText('🎙 ' + reciterName, W / 2, H - 60);
-    rctx.shadowBlur = 0;
-    rctx.textAlign = 'start';
-    }
-
     let stream;
     try {
       stream = rec.captureStream(30);
@@ -1351,15 +1338,6 @@ async function createVideo() {
       if (mediaRecorder.state !== 'recording') { clearInterval(window._drawTimer); return; }
       rctx.clearRect(0, 0, W, H);
       rctx.drawImage(mainCanvas, 0, 0);
-      if (document.getElementById('showReciter').checked) {
-        rctx.font = 'italic 28px "Cormorant Garamond", serif';
-        rctx.fillStyle = 'rgba(255,255,255,0.55)';
-        rctx.shadowColor = 'rgba(0,0,0,0.6)'; rctx.shadowBlur = 4;
-        rctx.textAlign = 'center';
-        rctx.fillText('🎙 ' + reciterName, W / 2, H - 60);
-        rctx.shadowBlur = 0;
-        rctx.textAlign = 'start';
-      }
       // ✨ Sparkles
       for (const sp of sparkles) {
         sp.a += sp.da;
